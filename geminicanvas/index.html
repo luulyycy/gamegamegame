@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>戰勝拖延行動清單</title>
+    <style>
+        :root {
+            --primary: #4f46e5;
+            --success: #10b981;
+            --gray: #9ca3af;
+            --bg: #f3f4f6;
+        }
+
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            background-color: var(--bg);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .container {
+            max-width: 600px;
+            width: 100%;
+        }
+
+        h1 { color: #1f2937; text-align: center; }
+
+        /* 表單樣式 */
+        .card {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+        }
+
+        .form-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; font-weight: bold; color: #374151; }
+        input, select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            box-sizing: border-box;
+        }
+
+        button.btn-primary {
+            width: 100%;
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        /* 篩選器 */
+        .filters {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            justify-content: center;
+        }
+
+        .filter-btn {
+            background: #e5e7eb;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 20px;
+            cursor: pointer;
+        }
+
+        .filter-btn.active {
+            background: var(--primary);
+            color: white;
+        }
+
+        /* 清單樣式 */
+        .task-card {
+            background: white;
+            border-left: 5px solid var(--primary);
+            padding: 15px;
+            margin-bottom: 15px;
+            border-radius: 8px;
+            position: relative;
+            transition: all 0.3s;
+        }
+
+        .task-card.done {
+            border-left-color: var(--gray);
+            opacity: 0.6;
+            text-decoration: line-through;
+        }
+
+        .status-badge {
+            font-size: 12px;
+            padding: 2px 8px;
+            border-radius: 10px;
+            float: right;
+        }
+
+        .badge-active { background: #fee2e2; color: #991b1b; }
+        .badge-done { background: #d1fae5; color: #065f46; }
+
+        .btn-toggle {
+            margin-top: 10px;
+            cursor: pointer;
+            padding: 5px 12px;
+            border-radius: 4px;
+            border: 1px solid #d1d5db;
+            background: white;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>🚀 戰勝拖延行動清單</h1>
+    
+    <div class="card">
+        <form id="actionForm">
+            <div class="form-group">
+                <label>挑戰任務 (必填)</label>
+                <input type="text" id="taskName" placeholder="例如：寫完報告的前兩頁" required>
+            </div>
+            <div class="form-group">
+                <label>核心動機 (必填)</label>
+                <input type="text" id="motivation" placeholder="完成後我能放心地玩遊戲 1 小時" required>
+            </div>
+            <div class="form-group">
+                <label>預計耗時 (可選)</label>
+                <input type="text" id="duration" placeholder="例如：25 分鐘">
+            </div>
+            <button type="submit" class="btn-primary">立即開始行動</button>
+        </form>
+    </div>
+
+    <div class="filters">
+        <button class="filter-btn active" onclick="setFilter('all')">全部</button>
+        <button class="filter-btn" onclick="setFilter('active')">進行中</button>
+        <button class="filter-btn" onclick="setFilter('done')">已克服</button>
+    </div>
+
+    <div id="listContainer"></div>
+</div>
+
+<script>
+    let currentFilter = 'all';
+
+    // 1. 建立 Record Object
+    function createRecord(formData) {
+        return {
+            id: Date.now().toString(),
+            createdAt: new Date().toISOString(),
+            status: 'active',
+            taskName: formData.get('taskName'),
+            motivation: formData.get('motivation'),
+            duration: formData.get('duration') || '未設定'
+        };
+    }
+
+    // 2. 儲存到 localStorage
+    function saveData(record) {
+        const records = loadData();
+        records.push(record);
+        localStorage.setItem('records', JSON.stringify(records));
+    }
+
+    // 3. 讀取資料
+    function loadData() {
+        const data = localStorage.getItem('records');
+        return data ? JSON.parse(data) : [];
+    }
+
+    // 4. 更新狀態
+    function updateRecord(id, changes) {
+        let records = loadData();
+        records = records.map(r => r.id === id ? { ...r, ...changes } : r);
+        localStorage.setItem('records', JSON.stringify(records));
+        refreshUI();
+    }
+
+    // 5. 渲染頁面
+    function renderList(recordsToShow) {
+        const container = document.getElementById('listContainer');
+        container.innerHTML = '';
+
+        recordsToShow.forEach(record => {
+            const isDone = record.status === 'done';
+            const card = document.createElement('div');
+            card.className = `task-card ${isDone ? 'done' : ''}`;
+            
+            card.innerHTML = `
+                <span class="status-badge ${isDone ? 'badge-done' : 'badge-active'}">
+                    ${isDone ? '已克服' : '待挑戰'}
+                </span>
+                <h3>${record.taskName}</h3>
+                <p><strong>🔥 動機：</strong>${record.motivation}</p>
+                <p><strong>⏳ 預計時間：</strong>${record.duration}</p>
+                <button class="btn-toggle" onclick="toggleStatus('${record.id}', '${record.status}')">
+                    ${isDone ? '重啟挑戰' : '標記為完成'}
+                </button>
+            `;
+            container.appendChild(card);
+        });
+    }
+
+    // UI 控制邏輯
+    function refreshUI() {
+        let records = loadData();
+        if (currentFilter === 'active') records = records.filter(r => r.status === 'active');
+        if (currentFilter === 'done') records = records.filter(r => r.status === 'done');
+        renderList(records);
+    }
+
+    function toggleStatus(id, currentStatus) {
+        const newStatus = currentStatus === 'active' ? 'done' : 'active';
+        updateRecord(id, { status: newStatus });
+    }
+
+    function setFilter(filter) {
+        currentFilter = filter;
+        document.querySelectorAll('.filter-btn').forEach(btn => {
+            btn.classList.toggle('active', btn.innerText.includes(filter === 'all' ? '全部' : (filter === 'active' ? '進行中' : '已克服')));
+        });
+        refreshUI();
+    }
+
+    // 初始化事件監聽
+    document.getElementById('actionForm').addEventListener('submit', (e) => {
+        e.preventDefault();
+        const formData = new FormData(e.target);
+        const newRecord = createRecord(formData);
+        saveData(newRecord);
+        e.target.reset();
+        refreshUI();
+    });
+
+    // 初始加載
+    refreshUI();
+
+</script>
+</body>
+</html>

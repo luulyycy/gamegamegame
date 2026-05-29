@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>拖延終結者 - 戰勝你的明天</title>
+    <style>
+        :root {
+            --primary: #e67e22;
+            --secondary: #d35400;
+            --success: #27ae60;
+            --gray: #95a5a6;
+            --bg: #f4f7f6;
+            --text: #2c3e50;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif, "微軟正黑體";
+            background-color: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 700px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            text-align: center;
+            color: var(--secondary);
+            margin-bottom: 30px;
+        }
+
+        /* 表單樣式 */
+        .input-section {
+            background: #fff;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        input[type="text"], input[type="number"], textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            box-sizing: border-box;
+            font-size: 16px;
+        }
+
+        .btn-submit {
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            width: 100%;
+            font-size: 18px;
+            font-weight: bold;
+            transition: background 0.3s;
+        }
+
+        .btn-submit:hover {
+            background-color: var(--secondary);
+        }
+
+        /* 篩選器樣式 */
+        .filter-group {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .filter-btn {
+            padding: 8px 16px;
+            border: 1px solid var(--primary);
+            background: white;
+            color: var(--primary);
+            border-radius: 20px;
+            cursor: pointer;
+        }
+
+        .filter-btn.active {
+            background: var(--primary);
+            color: white;
+        }
+
+        /* 列表樣式 */
+        .record-list {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .record-card {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            border-left: 6px solid var(--primary);
+            transition: all 0.3s;
+        }
+
+        .record-card.status-done {
+            border-left-color: var(--success);
+            background: #f0f0f0;
+            opacity: 0.8;
+        }
+
+        .record-card h3 {
+            margin: 0 0 10px 0;
+            color: var(--text);
+        }
+
+        .record-card.status-done h3 {
+            text-decoration: line-through;
+            color: var(--gray);
+        }
+
+        .info-row {
+            font-size: 14px;
+            margin-bottom: 8px;
+        }
+
+        .badge-done {
+            display: inline-block;
+            background: var(--success);
+            color: white;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            margin-bottom: 10px;
+        }
+
+        .reason-box {
+            background: #fff8f0;
+            padding: 10px;
+            border-radius: 4px;
+            border: 1px dashed var(--primary);
+            font-style: italic;
+            margin: 10px 0;
+        }
+
+        .btn-status {
+            padding: 6px 12px;
+            border-radius: 4px;
+            border: 1px solid #ccc;
+            background: white;
+            cursor: pointer;
+            float: right;
+        }
+
+        .footer-info {
+            font-size: 12px;
+            color: var(--gray);
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>拖延終結者</h1>
+
+    <div class="input-section">
+        <form id="recordForm">
+            <div class="form-group">
+                <label>行動任務名稱 (必填)</label>
+                <input type="text" id="taskName" required placeholder="例如：寫報告、整理桌面...">
+            </div>
+            <div class="form-group">
+                <label>起動動力 (必填)</label>
+                <textarea id="reasonToStart" required placeholder="寫下一個理由讓自己現在就開始..."></textarea>
+            </div>
+            <div class="form-group">
+                <label>預計耗時 (分鐘，可選)</label>
+                <input type="number" id="estimateTime" placeholder="例如：15">
+            </div>
+            <button type="submit" class="btn-submit">加入戰局</button>
+        </form>
+    </div>
+
+    <div class="filter-group">
+        <button class="filter-btn active" onclick="changeFilter('all', this)">全部</button>
+        <button class="filter-btn" onclick="changeFilter('active', this)">行動中</button>
+        <button class="filter-btn" onclick="changeFilter('done', this)">已戰勝</button>
+    </div>
+
+    <div id="recordList" class="record-list">
+        </div>
+</div>
+
+<script>
+    const STORAGE_KEY = 'records';
+    let currentFilter = 'all';
+
+    // 頁面初始化
+    document.addEventListener('DOMContentLoaded', () => {
+        const records = loadData();
+        renderList(records);
+
+        // 綁定表單事件
+        document.getElementById('recordForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            
+            const formData = {
+                taskName: document.getElementById('taskName').value,
+                reasonToStart: document.getElementById('reasonToStart').value,
+                estimateTime: document.getElementById('estimateTime').value
+            };
+
+            const newRecord = createRecord(formData);
+            saveData(newRecord);
+            
+            // 重置表單並重新渲染
+            e.target.reset();
+            const updatedRecords = loadData();
+            applyFilter(updatedRecords);
+        });
+    });
+
+    /**
+     * 1. 建立 Record 物件
+     */
+    function createRecord(formData) {
+        return {
+            id: 'id-' + Date.now(),
+            createdAt: new Date().toISOString(),
+            status: 'active',
+            taskName: formData.taskName,
+            reasonToStart: formData.reasonToStart,
+            estimateTime: formData.estimateTime || '未評估'
+        };
+    }
+
+    /**
+     * 2. 儲存一筆 Record
+     */
+    function saveData(record) {
+        const records = loadData();
+        records.unshift(record); // 最新增的排在最前面
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(records));
+    }
+
+    /**
+     * 3. 讀取所有 Records
+     */
+    function loadData() {
+        const data = localStorage.getItem(STORAGE_KEY);
+        return data ? JSON.parse(data) : [];
+    }
+
+    /**
+     * 4. 更新 Record
+     */
+    function updateRecord(id, changes) {
+        let records = loadData();
+        records = records.map(r => r.id === id ? { ...r, ...changes } : r);
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(records));
+        applyFilter(records);
+    }
+
+    /**
+     * 5. 渲染列表
+     */
+    function renderList(recordsToShow) {
+        const container = document.getElementById('recordList');
+        container.innerHTML = '';
+
+        if (recordsToShow.length === 0) {
+            container.innerHTML = '<p style="text-align:center; color:#95a5a6;">目前沒有任務，快去建立一個行動吧！</p>';
+            return;
+        }
+
+        recordsToShow.forEach(record => {
+            const isDone = record.status === 'done';
+            const card = document.createElement('div');
+            card.className = `record-card ${isDone ? 'status-done' : ''}`;
+            
+            card.innerHTML = `
+                <button class="btn-status" onclick="toggleStatus('${record.id}', '${record.status}')">
+                    ${isDone ? '恢復行動' : '完成任務'}
+                </button>
+                ${isDone ? '<span class="badge-done">戰勝拖延</span>' : ''}
+                <h3>${record.taskName}</h3>
+                <div class="info-row">⏱️ 預計耗時：${record.estimateTime} 分鐘</div>
+                <div class="reason-box">
+                    <strong>起動動力：</strong><br>
+                    ${record.reasonToStart}
+                </div>
+                <div class="footer-info">建立於：${new Date(record.createdAt).toLocaleString()}</div>
+            `;
+            container.appendChild(card);
+        });
+    }
+
+    /**
+     * 輔助：切換狀態邏輯
+     */
+    function toggleStatus(id, currentStatus) {
+        const newStatus = currentStatus === 'active' ? 'done' : 'active';
+        updateRecord(id, { status: newStatus });
+    }
+
+    /**
+     * 輔助：處理篩選
+     */
+    function changeFilter(filterType, element) {
+        currentFilter = filterType;
+        
+        // 切換按鈕 UI
+        document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
+        element.classList.add('active');
+        
+        applyFilter(loadData());
+    }
+
+    /**
+     * 輔助：根據當前 filter 類型過濾資料並渲染
+     */
+    function applyFilter(allRecords) {
+        let filtered = allRecords;
+        if (currentFilter === 'active') {
+            filtered = allRecords.filter(r => r.status === 'active');
+        } else if (currentFilter === 'done') {
+            filtered = allRecords.filter(r => r.status === 'done');
+        }
+        renderList(filtered);
+    }
+</script>
+
+</body>
+</html>

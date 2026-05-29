@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>超級無敵飯糰俠 - 銷售數據分析報告</title>
+    <!-- 引入 Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- 引入 Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- 引入 Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        body {
+            background-color: #FDFBF7;
+            color: #4A3B32;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            scroll-behavior: smooth;
+        }
+        .report-card {
+            background-color: #FFFFFF;
+            border: 1px solid #EAE0D5;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+            transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+        }
+        .emoji-riceball {
+            display: inline-block;
+            filter: drop-shadow(2px 4px 6px rgba(0,0,0,0.15));
+            transform-origin: center;
+        }
+        .emoji-left { transform: rotate(-10deg); }
+        .emoji-right { transform: rotate(10deg); }
+        
+        /* 隱藏內容的漸變動畫 */
+        .tab-content {
+            display: none;
+            animation: fadeIn 0.4s ease-in-out;
+        }
+        .tab-content.active {
+            display: block;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body class="min-h-screen text-[#4A3B32] pb-12">
+
+    <!-- 滿版頁首橫幅 (Banner) -->
+    <header class="w-full bg-gradient-to-r from-[#EAE0D5] via-[#F5EBE1] to-[#EAE0D5] pt-16 pb-12 shadow-sm relative overflow-hidden border-b border-[#D4C4B7]">
+        <i data-lucide="utensils" class="absolute right-10 -bottom-10 w-64 h-64 text-[#FFFFFF] opacity-40"></i>
+        <i data-lucide="bar-chart-2" class="absolute left-10 -top-10 w-48 h-48 text-[#FFFFFF] opacity-40"></i>
+        
+        <div class="max-w-6xl mx-auto px-4 md:px-8 relative z-10 text-center">
+            <span class="inline-block py-1.5 px-4 rounded-full bg-white/60 text-[#5A4A42] text-sm font-bold tracking-widest mb-6 border border-[#C5B4A5] shadow-sm">
+                2026 第一季度營運總結
+            </span>
+            
+            <h1 class="flex items-center justify-center gap-3 md:gap-6 text-4xl md:text-5xl lg:text-6xl font-extrabold text-[#4A3B32] mb-6 tracking-tight">
+                <span class="text-5xl md:text-6xl emoji-riceball emoji-left">🍙</span>
+                超級無敵飯糰俠
+                <span class="text-5xl md:text-6xl emoji-riceball emoji-right">🍙</span>
+            </h1>
+            
+            <h2 class="text-2xl md:text-3xl font-bold text-[#6B5B52] mb-4">
+                銷售數據分析與策略報告
+            </h2>
+            <p class="text-[#7A6A60] text-lg max-w-2xl mx-auto leading-relaxed mb-8">
+                透過真實交易記錄的深度可視化分析，挖掘門市營收潛力、剖析客群消費行為，並提出具體可行的下一步營運策略。
+            </p>
+
+            <!-- 互動型按鈕欄 -->
+            <nav class="flex flex-wrap justify-center gap-3 md:gap-4 mt-8">
+                <button id="btn-home" onclick="switchTab('home')" class="tab-btn bg-[#A8896C] text-white shadow-md font-bold py-2.5 px-6 rounded-full transition-all duration-200 hover:scale-105">
+                    核心數據洞察
+                </button>
+                <button id="btn-branch" onclick="switchTab('branch')" class="tab-btn bg-white/80 text-[#6B5B52] border border-[#D4C4B7] font-bold py-2.5 px-6 rounded-full transition-all duration-200 hover:bg-[#F6F0EA] hover:scale-105">
+                    各分店總銷售額
+                </button>
+                <button id="btn-product" onclick="switchTab('product')" class="tab-btn bg-white/80 text-[#6B5B52] border border-[#D4C4B7] font-bold py-2.5 px-6 rounded-full transition-all duration-200 hover:bg-[#F6F0EA] hover:scale-105">
+                    產品類別銷售佔比
+                </button>
+                <button id="btn-age" onclick="switchTab('age')" class="tab-btn bg-white/80 text-[#6B5B52] border border-[#D4C4B7] font-bold py-2.5 px-6 rounded-full transition-all duration-200 hover:bg-[#F6F0EA] hover:scale-105">
+                    各年齡層購買結構
+                </button>
+                <button id="btn-time" onclick="switchTab('time')" class="tab-btn bg-white/80 text-[#6B5B52] border border-[#D4C4B7] font-bold py-2.5 px-6 rounded-full transition-all duration-200 hover:bg-[#F6F0EA] hover:scale-105">
+                    時段銷售熱度
+                </button>
+            </nav>
+        </div>
+    </header>
+
+    <!-- 主要內容區塊 -->
+    <main class="max-w-7xl mx-auto px-4 md:px-8 mt-8">
+
+        <!-- Tab 1: 核心數據洞察 (主頁預設) -->
+        <section id="home" class="tab-content active">
+            <div class="bg-white p-8 md:p-12 rounded-3xl border border-[#EAE0D5] shadow-sm relative overflow-hidden">
+                <div class="absolute top-0 left-0 w-2 h-full bg-[#A8896C]"></div>
+                <div class="flex items-center gap-3 mb-8 border-b border-[#EAE0D5] pb-4">
+                    <i data-lucide="lightbulb" class="text-[#A8896C] w-8 h-8"></i>
+                    <h2 class="text-3xl font-bold text-[#4A3B32]">核心數據洞察總覽</h2>
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-10">
+                    <div class="space-y-4 bg-[#FDFBF7] p-6 rounded-2xl border border-[#F5EBE1]">
+                        <h3 class="text-xl font-bold text-[#7FA1C3] flex items-center gap-2">
+                            <span class="bg-[#7FA1C3] text-white w-7 h-7 rounded-full flex items-center justify-center text-sm shadow-sm">1</span>
+                            門市營收分佈
+                        </h3>
+                        <p class="text-[#6B5B52] leading-relaxed text-justify">
+                            核心商業區的門市表現最為亮眼。<strong>銅鑼灣店以高達 45,000 港元的總銷售額位居榜首</strong>，緊隨其後的是旺角店。相對地，位於住宅區的將軍澳店與元朗店銷售額較低。證明了高人流地段對即食餐飲營收的正向帶動效果。
+                        </p>
+                    </div>
+                    
+                    <div class="space-y-4 bg-[#FDFBF7] p-6 rounded-2xl border border-[#F5EBE1]">
+                        <h3 class="text-xl font-bold text-[#7FA1C3] flex items-center gap-2">
+                            <span class="bg-[#7FA1C3] text-white w-7 h-7 rounded-full flex items-center justify-center text-sm shadow-sm">2</span>
+                            產品結構潛力
+                        </h3>
+                        <p class="text-[#6B5B52] leading-relaxed text-justify">
+                            「飯糰」佔據了 55% 的營業額穩固基本盤。值得關注的是，<strong>高毛利的「飲品」與「小食」合計貢獻了高達 35% 的營收</strong>。表明顧客常以「主食搭配配餐」形式消費，交叉銷售（Cross-selling）仍有龐大空間。
+                        </p>
+                    </div>
+
+                    <div class="space-y-4 bg-[#FDFBF7] p-6 rounded-2xl border border-[#F5EBE1]">
+                        <h3 class="text-xl font-bold text-[#7FA1C3] flex items-center gap-2">
+                            <span class="bg-[#7FA1C3] text-white w-7 h-7 rounded-full flex items-center justify-center text-sm shadow-sm">3</span>
+                            客群時段輪廓
+                        </h3>
+                        <p class="text-[#6B5B52] leading-relaxed text-justify">
+                            <strong>年輕客群對飲品和小食喜好度達 50% 以上</strong>，且週末下午茶時段熱度高。相反地，26歲以上的上班族客群，則傾向在平日早午市購買「飯糰配湯品」，湯品銷售佔比隨顧客年齡增長而顯著提升。
+                        </p>
+                    </div>
+                </div>
+                <div class="mt-8 text-center">
+                    <p class="text-[#8A7A6B] text-sm flex items-center justify-center gap-2">
+                        <i data-lucide="mouse-pointer-click" class="w-4 h-4"></i>
+                        點擊上方按鈕查看詳細圖表與具體營運建議
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Tab 2: 各分店總銷售額比較 -->
+        <section id="branch" class="tab-content">
+            <div class="flex items-center gap-3 mb-6 ml-2">
+                <i data-lucide="bar-chart-3" class="text-[#A8896C] w-7 h-7"></i>
+                <h2 class="text-2xl font-bold text-[#4A3B32]">各分店總銷售額比較</h2>
+            </div>
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <div class="lg:col-span-2 report-card rounded-3xl p-6 md:p-8 flex flex-col justify-center">
+                    <div class="relative h-96 w-full">
+                        <canvas id="barChart"></canvas>
+                    </div>
+                </div>
+                <div class="lg:col-span-1 space-y-6">
+                    <div class="bg-white p-6 rounded-2xl border border-[#EAE0D5] shadow-sm">
+                        <h3 class="font-bold text-[#A8896C] mb-3 flex items-center gap-2"><i data-lucide="search" class="w-5 h-5"></i> 數據解讀</h3>
+                        <p class="text-[#6B5B52]">銅鑼灣店與旺角店等核心商業區表現亮眼，營收突破 40k。然而，將軍澳與元朗等住宅區門市，平日客流量不及商業區，總營業額落後約 30%。</p>
+                    </div>
+                    <div class="bg-[#F6F0EA] p-6 rounded-2xl border border-[#D4C4B7]">
+                        <h3 class="font-bold text-[#4A3B32] mb-3 text-lg flex items-center gap-2"><i data-lucide="check-circle-2" class="w-6 h-6 text-[#7FA1C3]"></i> 對應營運建議</h3>
+                        <strong class="block text-[#4A3B32] mb-2">住宅區轉型：主打「家庭分享餐」</strong>
+                        <p class="text-[#6B5B52] text-sm leading-relaxed">針對元朗與將軍澳等住宅區門市，應善用當地家庭客群優勢，於晚市及週末重點推廣「家庭滿載套餐」（如任選4個飯糰+家庭號小食拼盤），以大份量、高客單價彌補客流量的不足。</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Tab 3: 產品類別銷售佔比 -->
+        <section id="product" class="tab-content">
+            <div class="flex items-center gap-3 mb-6 ml-2">
+                <i data-lucide="pie-chart" class="text-[#A8896C] w-7 h-7"></i>
+                <h2 class="text-2xl font-bold text-[#4A3B32]">產品類別銷售佔比</h2>
+            </div>
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <div class="lg:col-span-2 report-card rounded-3xl p-6 md:p-8 flex flex-col justify-center">
+                    <div class="relative h-96 w-full flex justify-center">
+                        <canvas id="pieChart"></canvas>
+                    </div>
+                </div>
+                <div class="lg:col-span-1 space-y-6">
+                    <div class="bg-white p-6 rounded-2xl border border-[#EAE0D5] shadow-sm">
+                        <h3 class="font-bold text-[#A8896C] mb-3 flex items-center gap-2"><i data-lucide="search" class="w-5 h-5"></i> 數據解讀</h3>
+                        <p class="text-[#6B5B52]">雖然飯糰穩佔 55% 的營業額，但高毛利的「飲品」與「小食」合計已貢獻 35% 營收，顯示顧客極常搭配附餐消費。</p>
+                    </div>
+                    <div class="bg-[#F6F0EA] p-6 rounded-2xl border border-[#D4C4B7]">
+                        <h3 class="font-bold text-[#4A3B32] mb-3 text-lg flex items-center gap-2"><i data-lucide="check-circle-2" class="w-6 h-6 text-[#7FA1C3]"></i> 對應營運建議</h3>
+                        <strong class="block text-[#4A3B32] mb-2">優化交叉銷售 (Cross-Selling)</strong>
+                        <p class="text-[#6B5B52] text-sm leading-relaxed">利用附餐的高接受度，全面推廣「套餐升級」。在點餐機台的結帳前頁面，強制彈出「加購小食/飲品享 8 折」的視覺化提示，將單點客單價轉化為高利潤的套餐客單價。</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Tab 4: 各年齡層產品購買結構 -->
+        <section id="age" class="tab-content">
+            <div class="flex items-center gap-3 mb-6 ml-2">
+                <i data-lucide="users" class="text-[#A8896C] w-7 h-7"></i>
+                <h2 class="text-2xl font-bold text-[#4A3B32]">各年齡層產品購買結構</h2>
+            </div>
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <div class="lg:col-span-2 report-card rounded-3xl p-6 md:p-8 flex flex-col justify-center">
+                    <div class="relative h-96 w-full">
+                        <canvas id="ageChart"></canvas>
+                    </div>
+                </div>
+                <div class="lg:col-span-1 space-y-6">
+                    <div class="bg-white p-6 rounded-2xl border border-[#EAE0D5] shadow-sm">
+                        <h3 class="font-bold text-[#A8896C] mb-3 flex items-center gap-2"><i data-lucide="search" class="w-5 h-5"></i> 數據解讀</h3>
+                        <p class="text-[#6B5B52]">年齡越大的客群，對「湯品」的需求呈階梯式上升（在 46 歲以上客群高達 25%）；而年輕客群則幾乎將預算分配在冷飲與小食上。</p>
+                    </div>
+                    <div class="bg-[#F6F0EA] p-6 rounded-2xl border border-[#D4C4B7]">
+                        <h3 class="font-bold text-[#4A3B32] mb-3 text-lg flex items-center gap-2"><i data-lucide="check-circle-2" class="w-6 h-6 text-[#7FA1C3]"></i> 對應營運建議</h3>
+                        <strong class="block text-[#4A3B32] mb-2">針對上班族的「暖胃加購」動線優化</strong>
+                        <p class="text-[#6B5B52] text-sm leading-relaxed">在早午市的高峰期，針對 26 歲以上的成熟上班客群，收銀台應強制執行「加購熱湯折抵 5 元」的話術。並將外送平台的首頁熱門設定為「飯糰＋味噌湯」，精準打擊需求。</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Tab 5: 平日 vs 週末時段銷售熱度 -->
+        <section id="time" class="tab-content">
+            <div class="flex items-center gap-3 mb-6 ml-2">
+                <i data-lucide="clock" class="text-[#A8896C] w-7 h-7"></i>
+                <h2 class="text-2xl font-bold text-[#4A3B32]">平日 vs 週末時段銷售熱度</h2>
+            </div>
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <div class="lg:col-span-2 report-card rounded-3xl p-6 md:p-8 flex flex-col justify-center">
+                    <div class="relative h-96 w-full">
+                        <canvas id="timePatternChart"></canvas>
+                    </div>
+                </div>
+                <div class="lg:col-span-1 space-y-6">
+                    <div class="bg-white p-6 rounded-2xl border border-[#EAE0D5] shadow-sm">
+                        <h3 class="font-bold text-[#A8896C] mb-3 flex items-center gap-2"><i data-lucide="search" class="w-5 h-5"></i> 數據解讀</h3>
+                        <p class="text-[#6B5B52]">平日銷售高度集中在早、午餐時段（高達 85%）；但到了週末，下午茶時段的銷售佔比異軍突起，高達 35%，成為週末的主力營收來源。</p>
+                    </div>
+                    <div class="bg-[#F6F0EA] p-6 rounded-2xl border border-[#D4C4B7]">
+                        <h3 class="font-bold text-[#4A3B32] mb-3 text-lg flex items-center gap-2"><i data-lucide="check-circle-2" class="w-6 h-6 text-[#7FA1C3]"></i> 對應營運建議</h3>
+                        <strong class="block text-[#4A3B32] mb-2">推廣「週末年輕派對」下午茶套餐</strong>
+                        <p class="text-[#6B5B52] text-sm leading-relaxed">鑑於週末下午茶時段的強烈需求，建議統一在全線門市（特別是旺角、銅鑼灣）推出限時的「1+1 派對組合（飯糰+特色飲品/薯條特價）」，最大化轉化週末逛街人潮。</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 頁尾與作者資訊 -->
+        <footer class="mt-16 pt-8 pb-4 border-t-2 border-[#EAE0D5] text-center">
+            <div class="inline-flex flex-col items-center justify-center p-6 bg-white rounded-2xl shadow-sm border border-[#EAE0D5] min-w-[300px]">
+                <p class="text-[#A8896C] font-bold text-sm tracking-widest uppercase mb-4">Report Author</p>
+                <div class="flex flex-col md:flex-row gap-6 md:gap-12 text-lg text-[#4A3B32]">
+                    <div class="flex items-center gap-2">
+                        <span class="font-bold">班別：</span>
+                        <span class="border-b-2 border-[#D4C4B7] min-w-[80px] inline-block text-center font-bold text-[#A8896C]">S4F</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span class="font-bold">學號：</span>
+                        <span class="border-b-2 border-[#D4C4B7] min-w-[80px] inline-block text-center font-bold text-[#A8896C]">11</span>
+                    </div>
+                </div>
+            </div>
+            <p class="text-[#A89F91] text-sm mt-8">© 2026 超級無敵飯糰俠. All rights reserved.</p>
+        </footer>
+
+    </main>
+
+    <script>
+        // 初始化 Lucide 圖標
+        lucide.createIcons();
+
+        // 統一配色系統 (卡其 + 淺藍色系)
+        const themeColors = {
+            riceball: '#A8896C', // 深卡其 (飯糰)
+            drinks:   '#8DB4E2', // 淺灰藍 (飲品)
+            snacks:   '#D4C4B7', // 淺卡其 (小食)
+            soup:     '#6A8CAF'  // 深灰藍 (湯品)
+        };
+
+        Chart.defaults.color = '#6B5B52';
+        Chart.defaults.font.family = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif';
+        Chart.defaults.font.size = 13;
+
+        // 分頁切換邏輯
+        function switchTab(tabId) {
+            // 隱藏所有內容
+            document.querySelectorAll('.tab-content').forEach(el => {
+                el.classList.remove('active');
+            });
+            // 重置所有按鈕樣式
+            document.querySelectorAll('.tab-btn').forEach(el => {
+                el.classList.remove('bg-[#A8896C]', 'text-white', 'shadow-md');
+                el.classList.add('bg-white/80', 'text-[#6B5B52]');
+            });
+            
+            // 顯示目標內容
+            document.getElementById(tabId).classList.add('active');
+            
+            // 設置按鈕高亮
+            const activeBtn = document.getElementById('btn-' + tabId);
+            activeBtn.classList.remove('bg-white/80', 'text-[#6B5B52]');
+            activeBtn.classList.add('bg-[#A8896C]', 'text-white', 'shadow-md');
+        }
+
+        // --- 初始化所有圖表 ---
+
+        // 1. 各分店銷售額 (更新：使用四色主題色系交替)
+        new Chart(document.getElementById('barChart').getContext('2d'), {
+            type: 'bar',
+            data: {
+                labels: ['銅鑼灣店', '旺角店', '沙田店', '觀塘店', '將軍澳店', '元朗店'],
+                datasets: [{
+                    label: '總銷售額 (HK$)',
+                    data: [45000, 42000, 38000, 35000, 30000, 28000],
+                    backgroundColor: [
+                        themeColors.riceball, // 銅鑼灣店 (深卡其)
+                        themeColors.drinks,   // 旺角店 (淺灰藍)
+                        themeColors.snacks,   // 沙田店 (淺卡其)
+                        themeColors.soup,     // 觀塘店 (深灰藍)
+                        themeColors.riceball, // 將軍澳店 (深卡其循環)
+                        themeColors.drinks    // 元朗店 (淺灰藍循環)
+                    ],
+                    borderRadius: 6,
+                    barPercentage: 0.6
+                }]
+            },
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: { backgroundColor: '#4A3B32', padding: 12 }
+                },
+                scales: {
+                    y: { grid: { borderDash: [3, 3], color: '#EAE0D5' }, ticks: { callback: v => '$' + (v/1000) + 'k' } },
+                    x: { grid: { display: false } }
+                }
+            }
+        });
+
+        // 2. 產品類別佔比
+        new Chart(document.getElementById('pieChart').getContext('2d'), {
+            type: 'doughnut',
+            data: {
+                labels: ['飯糰', '飲品', '小食', '湯品'],
+                datasets: [{
+                    data: [119900, 43600, 32700, 21800],
+                    backgroundColor: [themeColors.riceball, themeColors.drinks, themeColors.snacks, themeColors.soup],
+                    borderWidth: 3, borderColor: '#ffffff', hoverOffset: 4
+                }]
+            },
+            options: {
+                responsive: true, maintainAspectRatio: false, cutout: '60%',
+                plugins: {
+                    legend: { position: 'bottom', labels: { padding: 20, usePointStyle: true } },
+                    tooltip: { backgroundColor: '#4A3B32', padding: 12 }
+                }
+            }
+        });
+
+        // 3. 各年齡層購買結構
+        new Chart(document.getElementById('ageChart').getContext('2d'), {
+            type: 'bar',
+            data: {
+                labels: ['18歲以下', '18-25歲', '26-35歲', '36-45歲', '46歲+'],
+                datasets: [
+                    { label: '飯糰', data: [40, 45, 60, 65, 70], backgroundColor: themeColors.riceball },
+                    { label: '飲品', data: [30, 30, 25, 10, 5], backgroundColor: themeColors.drinks },
+                    { label: '小食', data: [25, 20, 5, 5, 0], backgroundColor: themeColors.snacks },
+                    { label: '湯品', data: [5, 5, 10, 20, 25], backgroundColor: themeColors.soup }
+                ]
+            },
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                plugins: {
+                    legend: { position: 'bottom', labels: { padding: 15, usePointStyle: true } },
+                    tooltip: { backgroundColor: '#4A3B32' }
+                },
+                scales: {
+                    x: { stacked: true, grid: { display: false } },
+                    y: { stacked: true, max: 100, ticks: { callback: v => v + '%' }, grid: { borderDash: [3, 3], color: '#EAE0D5' } }
+                }
+            }
+        });
+
+        // 4. 平日 vs 週末
+        new Chart(document.getElementById('timePatternChart').getContext('2d'), {
+            type: 'line',
+            data: {
+                labels: ['早市 (07-10)', '午市 (11-14)', '下午茶 (15-17)', '晚市 (18-21)'],
+                datasets: [
+                    {
+                        label: '平日佔比', data: [40, 45, 10, 5],
+                        borderColor: themeColors.soup, backgroundColor: 'rgba(106, 140, 175, 0.1)',
+                        borderWidth: 2, tension: 0.4, fill: true
+                    },
+                    {
+                        label: '週末佔比', data: [15, 30, 35, 20],
+                        borderColor: themeColors.riceball, backgroundColor: 'rgba(168, 137, 108, 0.15)',
+                        borderWidth: 2, tension: 0.4, fill: true
+                    }
+                ]
+            },
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                plugins: {
+                    legend: { position: 'bottom', labels: { padding: 15, usePointStyle: true } },
+                    tooltip: { backgroundColor: '#4A3B32' }
+                },
+                scales: {
+                    y: { ticks: { callback: v => v + '%' }, grid: { borderDash: [3, 3], color: '#EAE0D5' } },
+                    x: { grid: { display: false } }
+                }
+            }
+        });
+    </script>
+</body>
+</html>
